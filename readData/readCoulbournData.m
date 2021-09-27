@@ -1,12 +1,12 @@
 clear;
 global sep mouse;
 sep = '\';
-mouse = 'zz063';
-writeDataPath = 'C:\Users\zzhu34\Documents\gitRep\octoBehavior\';
+mouse = 'zz054';
+writeDataPath = 'C:\Users\zzhu34\Documents\tempdata\octoData';
 dataPath = [writeDataPath sep 'trialData' sep]; mkdir(dataPath);
 wheelTxtPath = ['C:\Users\zzhu34\Documents\tempdata\octoData\CoolTermData' sep mouse sep];
 
-readDataPath = 'C:\Users\zzhu34\Documents\tempdata\octoData\';
+readDataPath = 'C:\Users\zzhu34\Documents\tempdata\octoData\coulbournData';
 mousePath = [readDataPath sep mouse sep];
 %filenames = dir([mousePath '*.csv']);
 
@@ -102,19 +102,13 @@ for i = 1:length(filenames)
         trialData.stimulusTime{trainDay} = tempEntryTime(stimFlag);
         % RESPONSE time
         trialData.responseTime{trainDay} = tempEntryTime(respFlag);
-        % REACTION TIME
-        try
-            trialData.reactionTime{trainDay} = trialData.responseTime{trainDay}-trialData.stimulusTime{trainDay};
-        catch
-           error('Session ended prematurely'); 
-        end
+        
         % DATE
         trialData.date{trainDay} = expDate{i};
         % TRAINING TYPE
         trialData.trainingType{trainDay} = dirName;
-        % RESET variables
-        tempEntryIdx = []; tempEntryName = []; tempEntryTime = []; 
         
+        % Wheel information
         filePath = [wheelTxtPath sep mouse '_' expDateSimp{i} '.txt'];
         wheelSoundOnCheckFlag = 0;
         disp('------------------------------------------------------------')
@@ -130,7 +124,16 @@ for i = 1:length(filenames)
                 if length(hitCool) == length(hitCoul)
                     sameFlag = hitCool==hitCoul'; 
                     disp(['Coulbourn & Coolterm SAME Trialnum (' int2str(length(hitCoul)) '); Hit Check = ' int2str(sum(sameFlag))]);
-                    if sum(sameFlag)==length(hitCool); wheelSoundOnCheckFlag = 1; end 
+                    if sum(sameFlag)==length(hitCool); wheelSoundOnCheckFlag = 1; 
+                    %elseif length(hitCool)- sum(sameFlag) < 5 && all(hitCoul(sameFlag==0)==0)
+                    %    disp([int2str(length(hitCool)- sum(sameFlag)) ' trials have actions recorded as miss']);                        
+                    %    wheelSoundOnCheckFlag = 1; 
+                    elseif length(hitCool)- sum(sameFlag) < 10
+                        wheelSoundOn(sameFlag==0) = cell(1,sum(sameFlag==0)); wheelSoundOnCheckFlag = 1;
+                        disp([int2str(length(hitCool)- sum(sameFlag)) ' trials wheel data discarded']); 
+                    end
+                    
+                    
                 else
                     disp(['Coulbourn & Coolterm DIFFERENT Trialnum (' int2str(length(hitCoul)) ' ' int2str(length(hitCool)) ')'])
                     if length(hitCool) > length(hitCoul)
@@ -142,18 +145,38 @@ for i = 1:length(filenames)
                             hitCool = hitCool(tempTrialDiff+1:end);
                             sameFlag = hitCool==hitCoul';
                             disp(['FIXED -- Trialnum different likely due to sound test before 2AFC. Hit Check = ' int2str(sum(sameFlag))])
-                            if sum(sameFlag)==length(hitCool); wheelSoundOnCheckFlag = 1; end 
+                            if sum(sameFlag)==length(hitCool); wheelSoundOnCheckFlag = 1;
+                            %elseif length(hitCool)- sum(sameFlag) < 5 && all(hitCoul(sameFlag==0)==0)
+                            %    disp([int2str(length(hitCool)- sum(sameFlag)) ' trials have actions recorded as miss']);                        
+                            %    wheelSoundOnCheckFlag = 1; 
+                            elseif length(hitCool)- sum(sameFlag) < 10
+                                wheelSoundOn(sameFlag==0) = cell(1,sum(sameFlag==0)); wheelSoundOnCheckFlag = 1;
+                                disp([int2str(length(hitCool)- sum(sameFlag)) ' trials wheel data discarded']); 
+                            end
                         end
                     end
+                    
+                    
+                    
                 end
-                trialData.wheelSoundOn{trainDay} = fn_cell2matFillNan(wheelSoundOn);
+                if ~isempty(wheelSoundOn); trialData.wheelSoundOn{trainDay} = fn_cell2matFillNan(wheelSoundOn);
+                else; trialData.wheelSoundOn{trainDay} =[]; end
                 trialData.wheelSoundOnCheckFlag{trainDay} = wheelSoundOnCheckFlag;
             end
         else
-            disp([mouse '_' expDateSimp{i} '; Not wheel training or 2AFC session OR txt missing'])
+            disp([mouse '_' expDateSimp{i} '; ' dirName '; Not wheel training or 2AFC session OR txt missing'])
             trialData.wheelSoundOn{trainDay} = {};
             trialData.wheelSoundOnCheckFlag{trainDay} = wheelSoundOnCheckFlag;
         end
+        
+        % REACTION TIME
+        try
+            trialData.reactionTime{trainDay} = trialData.responseTime{trainDay}-trialData.stimulusTime{trainDay};
+        catch
+           error('Session ended prematurely'); 
+        end
+        % RESET variables
+        tempEntryIdx = []; tempEntryName = []; tempEntryTime = []; 
     end
 end
 
