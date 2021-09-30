@@ -9,8 +9,8 @@ if nargin == 1; selectProtocol = {'puretone'}; end
 global rootPath sep;
 sep = '\';
 rootPath = 'C:\Users\zzhu34\Documents\tempdata\octoData\';
-loadPath = [rootPath sep 'trialData\']; figPath = [rootPath sep 'figure/' sep 'wheelTraj' sep];
-mkdir(figPath);
+loadPath = [rootPath sep 'trialData\']; 
+figPath = [rootPath sep 'figure\' sep 'wheelTraj' sep]; mkdir(figPath);
 
 %selectProtocol = {'FM_One_Oct','FM_One_Oct_Prob','FM_Half_Oct','FM_Half_Oct_Prob'};
 trialData = fn_selectProtocol(loadPath, mouse, selectProtocol);

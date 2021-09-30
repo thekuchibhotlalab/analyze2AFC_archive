@@ -1,27 +1,25 @@
-function plotLearningCurveByTrial(mouse,selectProtocol)
-
-
+function plotLearningCurveTrial(mouse,selectProtocol)
+if nargin == 1; selectProtocol = {'puretone'}; end
 global sep;
 
 rootPath = 'C:\Users\zzhu34\Documents\tempdata\octoData\';
 loadPath = [rootPath sep 'trialData\'];
+figPath = [rootPath sep 'figure\' sep 'learningCurveTrial' sep]; mkdir(figPath);
 trialData = fn_selectProtocol(loadPath, mouse, selectProtocol);
 
-[accuracy,accuracyTop,accuracyMean,acc_L,accMean_L,acc_R,accMean_R,...
-    bias,bias_absMean,missBias,probeData,reinfDataBef, reinfDataAft,trialNum,probeTrialNum,probeDayNum,dayLen]...
-    = alignDays(trialData);
+outmat = alignDaysKeepMiss(trialData);
 
-plotAnimalByDay([accuracy actionRate stimulus bias missBias],probeData,probeTrialNum,dayLen,...
-    {'Accuracy','ActionRate','StimulusFreq','ActionBias','MissBias'},mouse)
+f = plotAnimalByDay([outmat.accuracy outmat.actionRate outmat.stimulus outmat.bias outmat.missBias],...
+    outmat.probeData,outmat.probeTrialNum,outmat.dayLen,...
+    {'Accuracy','ActionRate','StimulusFreq','ActionBias','MissBias'},mouse);
     
 saveas(f,[figPath sep mouse '.png']);
 close all;
-
 end
 
 
 %----------------------Code for Plotting------------------------------------------
-function plotAnimalByDay(mat,probeData,probeTrialNum,dayLen,ylabels,mouse)
+function f = plotAnimalByDay(mat,probeData,probeTrialNum,dayLen,ylabels,mouse)
 
 if nargin == 2; ylabels = {[],[]};end
 cumsumDayLen = [0 cumsum(dayLen)];
