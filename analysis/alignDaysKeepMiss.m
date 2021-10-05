@@ -37,8 +37,6 @@ outmat.accMean_R = fn_cell2mat(cellfun(@nanmean, accMean_R,'UniformOutput',false
 outmat.bias = fn_cell2mat(bias,1); 
 outmat.acc_L = fn_cell2mat(acc_L,1); outmat.acc_R = fn_cell2mat(acc_R,1);
 
-
-
 missBias = cellfun(@fn_getMissBias,trialData.stimulus,trialData.responseType,'UniformOutput',false);
 outmat.missBias = fn_cell2mat(missBias,1);
 %--------PROBE ORGANIZE BY DAY---------

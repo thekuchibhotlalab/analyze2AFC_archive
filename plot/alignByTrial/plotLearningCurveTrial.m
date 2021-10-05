@@ -1,7 +1,7 @@
 function plotLearningCurveTrial(mouse,selectProtocol)
 if nargin == 1; selectProtocol = {'puretone'}; end
 global sep;
-
+sep = '\';
 rootPath = 'C:\Users\zzhu34\Documents\tempdata\octoData\';
 loadPath = [rootPath sep 'trialData\'];
 figPath = [rootPath sep 'figure\' sep 'learningCurveTrial' sep]; mkdir(figPath);

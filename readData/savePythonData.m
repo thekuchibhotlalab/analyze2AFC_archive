@@ -1,6 +1,6 @@
-mouse = 'zz064';
-dataPath = 'C:\Users\zzhu34\Documents\gitRep\octoBehavior\trialData\';
-targetPath = 'C:\Users\zzhu34\Documents\gitRep\octoBehavior\psyTrackData\';
+mouse = 'zz066';
+dataPath = 'C:\Users\zzhu34\Documents\tempData\octoData\trialData\';
+targetPath = 'C:\Users\zzhu34\Documents\tempData\octoData\psyTrackData\';
 mkdir(targetPath);
 sep = '\';
 load([dataPath sep mouse '.mat']);

@@ -1,15 +1,16 @@
-clear;
+function  readCoulbournData(mousename)
 global sep mouse;
 sep = '\';
-mouse = 'zz054';
-writeDataPath = 'C:\Users\zzhu34\Documents\tempdata\octoData';
-dataPath = [writeDataPath sep 'trialData' sep]; mkdir(dataPath);
+mouse = mousename;
+dataPath = 'C:\Users\zzhu34\Documents\tempdata\octoData';
+writeDataPath = [dataPath sep 'trialData' sep]; mkdir(writeDataPath);
 wheelTxtPath = ['C:\Users\zzhu34\Documents\tempdata\octoData\CoolTermData' sep mouse sep];
 
 readDataPath = 'C:\Users\zzhu34\Documents\tempdata\octoData\coulbournData';
 mousePath = [readDataPath sep mouse sep];
 %filenames = dir([mousePath '*.csv']);
 
+diary([ writeDataPath sep 'log.txt'])
 %% read animal name and date for each file
 dirName = fn_readDir(mousePath);
 trialData = {};
@@ -20,7 +21,9 @@ end
 trialData = fn_catStructField(2, trialData{:});
 trialData = fn_sortStructByFieldKey(trialData,'date');
 
-save([dataPath sep mouse '.mat'],'trialData');
+save([writeDataPath sep mouse '.mat'],'trialData');
+
+end
 %% All the functions
 
 function trialData = readFiles(csvPath,dirName,wheelTxtPath)
@@ -117,9 +120,12 @@ for i = 1:length(filenames)
             if strcmp(dirName,'wheelTraining') % For wheel training Txt
                 wheelBout = readWheelTxt(filePath);
                 trialData.wheelSoundOn{trainDay} = {};
+                trialData.wheelPreSound{trainDay} = [];
                 trialData.wheelSoundOnCheckFlag{trainDay} = wheelSoundOnCheckFlag;
             else % For 2AFC Txt
-                [wheelSoundOn,wheelPreSound,hitCool] = read2AFCTxt(filePath);                
+                [wheelSoundOn,wheelPreSoundTemp,hitCool] = read2AFCTxt(filePath);  
+                wheelPreSound = cellfun(@cell2mat,wheelPreSoundTemp,'UniformOutput',false);
+                wheelPreSound = cellfun(@length,wheelPreSound)';
                 hitCoul = trialData.action{trainDay} ~= 0;
                 if length(hitCool) == length(hitCoul)
                     sameFlag = hitCool==hitCoul'; 
@@ -130,6 +136,7 @@ for i = 1:length(filenames)
                     %    wheelSoundOnCheckFlag = 1; 
                     elseif length(hitCool)- sum(sameFlag) < 10
                         wheelSoundOn(sameFlag==0) = cell(1,sum(sameFlag==0)); wheelSoundOnCheckFlag = 1;
+                        wheelPreSound(sameFlag==0) = nan;
                         disp([int2str(length(hitCool)- sum(sameFlag)) ' trials wheel data discarded']); 
                     end
                     
@@ -139,7 +146,7 @@ for i = 1:length(filenames)
                     if length(hitCool) > length(hitCoul)
                         tempTrialDiff = length(hitCool) - length(hitCoul);
                         if all(cellfun(@isempty,wheelSoundOn(1:tempTrialDiff))) && ...
-                                all(cellfun(@isempty,wheelPreSound(1:tempTrialDiff)))
+                                all(cellfun(@isempty,wheelPreSoundTemp(1:tempTrialDiff)))
                             wheelSoundOn = wheelSoundOn(tempTrialDiff+1:end);
                             wheelPreSound = wheelPreSound(tempTrialDiff+1:end);
                             hitCool = hitCool(tempTrialDiff+1:end);
@@ -151,6 +158,7 @@ for i = 1:length(filenames)
                             %    wheelSoundOnCheckFlag = 1; 
                             elseif length(hitCool)- sum(sameFlag) < 10
                                 wheelSoundOn(sameFlag==0) = cell(1,sum(sameFlag==0)); wheelSoundOnCheckFlag = 1;
+                                wheelPreSound(sameFlag==0) = nan;
                                 disp([int2str(length(hitCool)- sum(sameFlag)) ' trials wheel data discarded']); 
                             end
                         end
@@ -159,19 +167,24 @@ for i = 1:length(filenames)
                     
                     
                 end
-                if ~isempty(wheelSoundOn); trialData.wheelSoundOn{trainDay} = fn_cell2matFillNan(wheelSoundOn);
-                else; trialData.wheelSoundOn{trainDay} =[]; end
+                if ~isempty(wheelSoundOn)
+                    trialData.wheelSoundOn{trainDay} = fn_cell2matFillNan(wheelSoundOn);
+                    trialData.wheelPreSound{trainDay} = wheelPreSound;
+                else 
+                    trialData.wheelSoundOn{trainDay} ={}; trialData.wheelPreSound{trainDay} =[];
+                end
                 trialData.wheelSoundOnCheckFlag{trainDay} = wheelSoundOnCheckFlag;
             end
         else
             disp([mouse '_' expDateSimp{i} '; ' dirName '; Not wheel training or 2AFC session OR txt missing'])
-            trialData.wheelSoundOn{trainDay} = {};
+            trialData.wheelSoundOn{trainDay} = {};trialData.wheelPreSound{trainDay} = [];
             trialData.wheelSoundOnCheckFlag{trainDay} = wheelSoundOnCheckFlag;
         end
         
         % REACTION TIME
         try
             trialData.reactionTime{trainDay} = trialData.responseTime{trainDay}-trialData.stimulusTime{trainDay};
+            disp(['Mean reaction time = ' num2str(mean(trialData.reactionTime{trainDay}))])
         catch
            error('Session ended prematurely'); 
         end
@@ -182,6 +195,7 @@ end
 
 
 end
+
 
 function wheelBout = readWheelTxt(txtFilename)
 global sep mouse;
