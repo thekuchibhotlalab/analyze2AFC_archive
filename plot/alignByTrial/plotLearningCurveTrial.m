@@ -14,6 +14,7 @@ f = plotAnimalByDay([outmat.accuracy outmat.actionRate outmat.stimulus outmat.bi
     {'Accuracy','ActionRate','StimulusFreq','ActionBias','MissBias'},mouse);
     
 saveas(f,[figPath sep mouse '.png']);
+saveas(f,[figPath sep mouse '.m']);
 close all;
 end
 

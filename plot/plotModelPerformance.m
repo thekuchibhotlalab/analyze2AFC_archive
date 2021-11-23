@@ -121,7 +121,7 @@ bar(-mean(norm_logli(:,1:2),1),'EdgeColor',[1 1 1],'FaceColor',matlabColors(2,0.
 for i = 1:2
     scatter(i*ones(size(norm_logli,1),1),-norm_logli(:,i),10,[0 0 0],'filled');
 end
-xticklabels({'Stim Only',['+Bias '  'Choice History']})
+xticklabels({'Stim Only',['+Bias '  '& Trial History']})
 xtickangle(25); ylabel('Neg log-likeli (lower=better)');
 
 

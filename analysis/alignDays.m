@@ -2,13 +2,20 @@ function trialData = alignDays(trialData)
 
 
 for i = 1:length(trialData.stimulus)
+    if ~isempty(trialData.wheelSoundOn{i})
+        trialData.wheelSoundOn{i} = nansum(~isnan(trialData.wheelSoundOn{i}),2);
+    else
+        trialData.wheelSoundOn{i}=nan(length(trialData.stimulus{i}),1);
+    end
+    
     if ~trialData.wheelSoundOnCheckFlag{i}
         trialData.wheelPreSound{i} = nan(length(trialData.stimulus{i}),1);
+        trialData.wheelSoundOn{i} = nan(length(trialData.stimulus{i}),1);
     end
     
 end
 trialDataKeepMiss = trialData;
-rmFieldnames = {'date','trainingType','wheelSoundOn','wheelSoundOnCheckFlag','sortIdx'};
+rmFieldnames = {'date','trainingType','wheelSoundOnCheckFlag','sortIdx'};
 trialData = rmfield(trialData,rmFieldnames);
 learningCurveBin = 50;
 
@@ -36,9 +43,35 @@ trialData.accuracy = smoothdata(double(trialData.responseType==1),'movmean',lear
 
 [trialData.bias, trialData.acc_L, trialData.acc_R] = fn_getBias(trialData.stimulus,trialData.responseType);
 
-
 [probeData, ~,~,trialNumNoMiss,probeTrialNumNoMiss,reinfDataBef, reinfDataAft]...
     = cellfun(@fn_getProbe,trialDataKeepMiss.stimulus,trialDataKeepMiss.responseType,trialDataKeepMiss.context,'UniformOutput',false);
+
+
+actL = trialData.action == 1;biasBin = 20;
+actL = smoothdata(actL,'movmean',biasBin);
+actAxis = biasBin/2+1:length(actL)-biasBin/2;
+
+biasThreshold = 0.15; 
+biasL = find(actL >= (biasThreshold+0.5) ); biasR = find(actL <= (0.5-biasThreshold));
+trialBlockThreshold = 5;
+
+biasL_incre = diff(biasL); temp = biasL_incre(2:end);
+startFlag = find(biasL_incre>=5); 
+trialData.biasBlockL_start = biasL([1; startFlag+1]) ; 
+trialData.biasBlockL_end = biasL([startFlag; length(biasL)]) ;
+trialData.biasBlockL_len= trialData.biasBlockL_end - trialData.biasBlockL_start+1;
+trialData.biasBlockL_start = trialData.biasBlockL_start(trialData.biasBlockL_len>=trialBlockThreshold);
+trialData.biasBlockL_end = trialData.biasBlockL_end(trialData.biasBlockL_len>=trialBlockThreshold);
+trialData.biasBlockL_len = trialData.biasBlockL_len(trialData.biasBlockL_len>=trialBlockThreshold);
+
+biasR_incre = diff(biasR); temp = biasR_incre(2:end);
+startFlag = find(biasR_incre>=5); 
+trialData.biasBlockR_start = biasR([1; startFlag+1]) ; 
+trialData.biasBlockR_end = biasR([startFlag; length(biasR)]) ;
+trialData.biasBlockR_len= trialData.biasBlockR_end - trialData.biasBlockR_start+1;
+trialData.biasBlockR_start = trialData.biasBlockR_start(trialData.biasBlockR_len>=trialBlockThreshold);
+trialData.biasBlockR_end = trialData.biasBlockR_end(trialData.biasBlockR_len>=trialBlockThreshold);
+trialData.biasBlockR_len = trialData.biasBlockR_len(trialData.biasBlockR_len>=trialBlockThreshold);
 
 trialData.probeData = fn_cell2mat(probeData,1);
 trialData.reinfDataBef = fn_cell2mat(reinfDataBef,1);
@@ -58,7 +91,5 @@ trialData.probeTrialNum = probeTrialNum;
 
 trialData.reactionTime = trialData.reactionTime;
 
-% convert stimulus type from 1 or 2 to 1 or -1 for plotting
-trialData.stimulus = smoothdata(-trialData.stimulus*2+3,'movmean',learningCurveBin);
 trialData.lowActionDayFlag = lowActionDayFlag;
 end

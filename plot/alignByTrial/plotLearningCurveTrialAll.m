@@ -1,4 +1,4 @@
-function plotLearningCurveTrialAll(mice)
+function plotLearningCurveTrialAll(mice,selectProtocol)
 
 if nargin == 1; selectProtocol = {'puretone'}; end
 global sep;
@@ -16,7 +16,7 @@ accuracy = cellfun(@(x)(x.accuracy),outmat,'UniformOutput',false);
 probeData = cellfun(@(x)(x.probeData),outmat,'UniformOutput',false);
 probeTrialNum = cellfun(@(x)(x.probeTrialNum),outmat,'UniformOutput',false);
 
-trialLim = 2400;
+trialLim = 1200;
 trialBin = 0:300:trialLim;
 probeAllAni = nan(length(probeData),length(trialBin)-1);
 

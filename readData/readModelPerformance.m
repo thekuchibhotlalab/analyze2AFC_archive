@@ -9,9 +9,13 @@ learningCurveBin = 50;
 accuracyCell = {};
 for i = 1:length(mice)
     mouse = mice{i};
-    behavior = load([dataPath sep mouse '.mat']);
-    accuracyCell{i} = smoothdata(behavior.correct,'movmean', learningCurveBin);
+    if exist([dataPath sep mouse '.mat'])
+        behavior = load([dataPath sep mouse '.mat']);
+        accuracyCell{i} = smoothdata(behavior.correct,'movmean', learningCurveBin);
+    end
 end
+
+if isempty(accuracyCell); weightCell = {}; return; end
 
 %% 1.2 - MAKE REGRESSION LEARNING CURVE ACROSS MICE
 weightCell = {};

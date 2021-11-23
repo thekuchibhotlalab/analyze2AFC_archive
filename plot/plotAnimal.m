@@ -1,13 +1,13 @@
 clear;
 global dataPath sep;
-dataPath = 'C:\Users\zzhu34\Documents\gitRep\octoData\trialData';
+dataPath = 'C:\Users\zzhu34\Documents\tempdata\octoData\trialData';
 sep = '\';
 %selectProtocol = {'FM_One_Oct','FM_One_Oct_Prob','FM_Half_Oct','FM_Half_Oct_Prob'};
 selectProtocol = {'puretone'};
 
 %% PLOT ACCURACY LEARNING CURVE ACROSS MICE
 %mice = {'zz062','zz063'};
-%mice = {'zz054','zz062','zz063','zz066','zz067','zz068','zz069'};
+mice = {'zz054','zz062','zz063','zz066','zz067','zz068','zz069'};
 %mice = {'zz071','zz073','zz075','zz076','zz077','zz048','zz050'};
 %mice = {'zz070','zz071','zz072','zz073'};
 
