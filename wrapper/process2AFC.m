@@ -1,4 +1,4 @@
-clear; close all;
+clear;
 mice = {'zz054','zz062','zz063','zz066','zz067','zz068','zz069'};
 %mice = {'zz066','zz067','zz068','zz069'};
 %mice = {'zz081','zz082','zz083'}; %FM mice

@@ -1,5 +1,5 @@
-function [bias,acc_L,acc_R] = fn_getBias(stimulus,responeType)
-    biasBin = 100;
+function [bias,acc_L,acc_R] = fn_getBias(stimulus,responeType,biasBin)
+    if nargin<3; biasBin = 100; end
     correct = (responeType == 1);
     miss = (responeType == 0);
     bias = nan(size(correct)); acc_L = nan(size(correct)); acc_R = nan(size(correct));

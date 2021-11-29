@@ -7,24 +7,94 @@ classdef wheel2AFC < twoChoiceTask
     properties
         % structure containing info about wheel movement
         wheel
+        probe
+        bias
+        biasBlockL
+        biasBlockR
     end
     
     methods
         %-----------------------------CONSTRUCTOR METHODS-----------------------------------------
-        function obj = wheel2AFC(inStruct)
+        function obj = wheel2AFC(inStruct,varargin)
             %MOUSEOBJ Construct an instance of this class
             %   Detailed explanation goes here
-            obj = obj@twoChoiceTask(inStruct);
             
+            p = fn_inputParser(); p.parse(varargin{:});
             inputNames = fieldnames(inStruct);
+            obj = obj@twoChoiceTask(inStruct,varargin{:});
             
-            % Write input into MULTIDAY
-            multiDayNames = {'date','trainingType','sortIdx'};
-            obj.multiday = write2struct(obj.multiday,multiDayNames);
+            if strcmp(p.Results.inputType,'cell')
             
-            % Write input into WHEEL
-            wheelNames = {'wheelSoundOn','wheelPreSound','wheelSoundOnCheckFlag'};
-            obj.wheel = write2struct(obj.wheel,wheelNames);
+                % Write input into MULTIDAY
+                multiDayNames = {'date','trainingType','sortIdx'};
+                obj.multiday = write2struct(obj.multiday,multiDayNames);
+
+                % Write input into WHEEL
+                wheelNames = {'wheelSoundOn','wheelPreSound','wheelSoundOnCheckFlag'};
+                obj.wheel = write2struct(obj.wheel,wheelNames);
+
+                if ~isempty(p.Results.selectProtocol) ; obj = selectProtocol(obj,p.Results.selectProtocol); end
+
+                if p.Results.alignProbe2Day
+                    [probe.probeData, ~,probeTrialNum,~,probeTrialNumNoMiss,probe.reinfBefData, probe.reinfAftData]...
+                        = cellfun(@fn_getProbe,obj.stimulus,obj.responseType,obj.context,'UniformOutput',false);
+                    
+                end
+
+                obj = correctWheelTrial(obj);
+
+                if strcmp(p.Results.multidayType,'matByTrial')
+                    obj = concatenateDay(obj); 
+                    
+                    probe.probe = mean(probe.probeData(:,1:2),2); probe.probeBias = probe.probeData(:,5);
+                    probe.reinfBef=mean(probe.reinfBefData(:,1:2),2);probe.reinfAft=mean(probe.reinfAftData(:,1:2),2);
+                    probe.reinfBefBias = probe.reinfBefData(:,5);probe.reinfAftBias = reinfAft(:,5);
+                end
+                if strcmp(p.Results.missType,'remove'); obj = removeMiss(obj); end
+
+                if p.Results.alignProbe2Day && strcmp(p.Results.missType,'remove')
+                        probe.trialNum = probeTrialNumNoMiss; 
+                elseif p.Results.alignProbe2Day && strcmp(p.Results.missType,'keep')
+                        probe.trialNum = probeTrialNum; 
+                end
+
+                if p.Results.alignProbe2Day && strcmp(p.Results.multidayType,'matByTrial')
+                    probe = structfun(@(x)(fn_cell2mat(x,1)),probe,'UniformOutput',false);
+                    probe.probeDayNum = find(~isnan(probe.trialNum));
+
+                    cumsumTrials = [0;cumsum(obj.multiday.dayLenNoMiss)];
+                    probe.trialNum = probe.trialNum + cumsumTrials(1:end-1);
+                    probe.trialNum(isnan(probe.trialNum)) = [];
+                end
+
+                obj.probe = probe;
+                obj = getAcc(obj);
+                obj = getChoiceAcc(obj);
+                obj = getBiasBlock(obj);
+            else 
+                
+                taskObjPropName = properties('wheel2AFC');
+                % WRITE variables into OBJ
+                for i = 1:length(taskObjPropName)
+                    if contains(taskObjPropName{i},inputNames)
+                       obj.(taskObjPropName{i}) = inStruct.(taskObjPropName{i});
+                    end 
+                end
+            end
+            
+        
+            function p = fn_inputParser()
+                p = inputParser;
+                p.KeepUnmatched = true;
+                p.addParameter('inputType', 'cell')
+                p.addParameter('selectProtocol', {'puretone'})
+                p.addParameter('multidayType', 'matByTrial')
+                p.addParameter('missType', 'remove')
+                p.addParameter('alignProbe2Day', true)
+                p.addParameter('learningCurveBin', 50) 
+                p.addParameter('verbose', true)
+                  
+            end
             
             function S = write2struct(S,varNames)
                 for i = 1:length(varNames)
@@ -35,32 +105,78 @@ classdef wheel2AFC < twoChoiceTask
             end
         end
         %-----------------------------METHODS EXTENDING FROM TWOCHOICETASK CLASS-----------------------------------------
-        function obj = concatenateDay(obj)
-            %METHOD1 Summary of this method goes here
-            %   Detailed explanation goes here
-            obj = concatenateDay@Super(obj);
-            wheelPropSel = {'wheelPreSound'};
-            for i = 1:length(wheelPropSel)
-                if iscell(obj.(wheelPropSel{i})); obj.(wheelPropSel{i}) = fn_cell2mat(obj.(wheelPropSel{i}),1);end
-            end
-        end
-        
-        
-        
-        %-----------------------------METHODS SPECIFIC TO WHEEL 2AFC CLASS-----------------------------------------
-        function obj = selectProtocol(obj,selectProtocol)
-            %METHOD1 Summary of this method goes here
-            %   Detailed explanation goes here
-            selectFlag = fn_multistrcmp(obj.multiday.trainingType,selectProtocol);
-            obj = obj.selectDay(selectFlag);
-            multidayPropSel = {'date','trainingType',''};
+        function obj = selectDay(obj,selectFlag)
+            obj = selectDay@twoChoiceTask(obj,selectFlag);
+            multidayPropSel = {'date','trainingType','sortIdx'};
             for i = 1:length(multidayPropSel); obj.multiday.(multidayPropSel{i}) = obj.multiday.(multidayPropSel{i})(selectFlag);end
-            wheelPropSel = {'wheelPreSound'};
+            wheelPropSel = {'wheelPreSound','wheelSoundOn','wheelSoundOnCheckFlag'};
             for i = 1:length(wheelPropSel); obj.wheel.(wheelPropSel{i}) = obj.wheel.(wheelPropSel{i})(selectFlag);end
         end
         
-        function a = b(obj)
+        function obj = concatenateDay(obj)
+            obj = concatenateDay@twoChoiceTask(obj);
+            wheelPropSel = {'wheelPreSound'};
+            for i = 1:length(wheelPropSel)
+                if iscell(obj.wheel.(wheelPropSel{i})); obj.wheel.(wheelPropSel{i}) = fn_cell2mat(obj.wheel.(wheelPropSel{i}),1);end
+            end
+        end
+
+        function obj = removeMiss(obj)
+            [obj,missFlag] = removeMiss@twoChoiceTask(obj);
+            wheelPropSel = {'wheelPreSound'};
+            for i = 1:length(wheelPropSel)
+                obj.wheel.(wheelPropSel{i}) = fn_removeIdx(obj.wheel.(wheelPropSel{i}),missFlag);
+            end
             
+        end
+        
+        function obj = getChoiceAcc(obj)
+            [obj,obj.bias] = getChoiceAcc@twoChoiceTask(obj);
+        end
+        
+        %-----------------------------METHODS SPECIFIC TO WHEEL 2AFC CLASS-----------------------------------------
+        function obj = selectProtocol(obj,selectProtocol)
+            selectFlag = fn_multistrcmp(obj.multiday.trainingType,selectProtocol);
+            obj = selectDay(obj,selectFlag);
+        end
+        
+        function obj = correctWheelTrial(obj)
+            if strcmp(obj.multiday.multidayType,'cell')
+                for i = 1:length(obj.stimulus)
+                    if ~isempty(obj.wheel.wheelSoundOn{i})
+                        obj.wheel.wheelSoundOn{i} = nansum(~isnan(obj.wheel.wheelSoundOn{i}),2);
+                    else
+                        obj.wheel.wheelSoundOn{i}=nan(length(obj.stimulus{i}),1);
+                    end
+
+                    if ~obj.wheel.wheelSoundOnCheckFlag{i}
+                        obj.wheel.wheelPreSound{i} = nan(length(obj.stimulus{i}),1);
+                        obj.wheel.wheelSoundOn{i} = nan(length(obj.stimulus{i}),1);
+                    end
+                end
+            else; msgbox(['Multiday type is ' obj.multiday.multidayType ', need to be cell'], 'ERROR MESSAGE');
+            end
+        end
+        
+        function obj = getBiasBlock(obj)
+            actL = obj.action == 1;biasBin = 20;
+            actL = smoothdata(actL,'movmean',biasBin);
+            actAxis = biasBin/2+1:length(actL)-biasBin/2;
+
+            biasThreshold = 0.15; trialBlockThreshold = 5;
+            biasL = find(actL >= (biasThreshold+0.5) ); biasR = find(actL <= (0.5-biasThreshold));
+            obj.biasBlockL = selectBlock(biasL); obj.biasBlockR = selectBlock(biasR);
+            
+            function biasBlock = selectBlock(bias)
+                bias_incre = diff(bias); temp = bias_incre(2:end);
+                startFlag = find(bias_incre>=5); 
+                biasBlock.start = bias([1; startFlag+1]) ; 
+                biasBlock.end = bias([startFlag; length(bias)]) ;
+                biasBlock.len= biasBlock.end - biasBlock.start+1;
+
+                threFlag = biasBlock.len>=trialBlockThreshold;
+                biasBlock = structfun(@(x)(x(threFlag)),biasBlock,'UniformOutput', false);
+            end
             
         end
         

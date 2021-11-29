@@ -5,7 +5,8 @@ probeIdx = find(ctxt==3); nProbeRaw = length(probeIdx);
 
 trialNumNoMissIdx = cumsum((response~=0));
 
-probeData = []; reinfDataBef = []; reinfDataAft = [];
+%probeData = []; reinfDataBef = []; reinfDataAft = [];
+probeData = nan(1,5); reinfDataBef = nan(1,5); reinfDataAft = nan(1,5);
 goodProbeFlag = true;
 % Two probe sessions 
 if ~isempty(probeIdx)

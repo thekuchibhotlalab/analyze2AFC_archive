@@ -125,8 +125,8 @@ tempAftFlat = reshape(reinfAftDayPlot(1:nDay,:),1,[]);
 tempProbeFlat = reshape(probeDayPlot(1:nDay,:),1,[]);
 nanFlag = isnan(tempProbeFlat); 
 tempBefFlat(nanFlag) = []; tempAftFlat(nanFlag) = []; tempProbeFlat(nanFlag) = [];
-[hBef,pBef] = ttest(tempBefFlat,tempProbeFlat,'tail','left');
-[hAft,pAft] = ttest(tempAftFlat,tempProbeFlat,'tail','left');
+[pBef,hBef] = signrank(tempBefFlat,tempProbeFlat,'tail','left');
+[pAft,hAft] = signrank(tempAftFlat,tempProbeFlat,'tail','left');
 bar([nanmean(tempBefFlat) nanmean(tempProbeFlat) nanmean(tempAftFlat)] ,'EdgeColor','None','FaceColor',matlabColors(2,0.9)); hold on;
 for i = 1:length(tempBefFlat)
     f = plot([1 2 3],[tempBefFlat(i) tempProbeFlat(i) tempAftFlat(i)],'Color',[0.6 0.6 0.6],'Marker','.','MarkerSize',15,...
@@ -141,8 +141,8 @@ tempAftFlat = reshape(reinfAftBiasPlot(1:nDay,:),1,[]);
 tempProbeFlat = reshape(probeBiasPlot(1:nDay,:),1,[]);
 nanFlag = isnan(tempProbeFlat); 
 tempBefFlat(nanFlag) = []; tempAftFlat(nanFlag) = []; tempProbeFlat(nanFlag) = [];
-[hBef,pBef] = ttest(tempBefFlat,tempProbeFlat,'tail','right');
-[hAft,pAft] = ttest(tempAftFlat,tempProbeFlat,'tail','right');
+[pBef,hBef] = signrank(tempBefFlat,tempProbeFlat,'tail','right');
+[pAft,hAft] = signrank(tempAftFlat,tempProbeFlat,'tail','right');
 bar([nanmean(tempBefFlat) nanmean(tempProbeFlat) nanmean(tempAftFlat)] ,'EdgeColor','None','FaceColor',matlabColors(2,0.9)); hold on;
 for i = 1:length(tempBefFlat)
     f = plot([1 2 3],[tempBefFlat(i) tempProbeFlat(i) tempAftFlat(i)],'Color',[0.6 0.6 0.6],'Marker','.','MarkerSize',15,...
@@ -260,13 +260,13 @@ if ~isempty(weightCell)
     plot([1 trialLim],[0.5 0.5],'Color',[0.6 0.6 0.6],'LineWidth',2);
     xlim([1 trialLim]); ylabel('Accuracy'); xlabel('Trials');
 
-    a = cellfun(@(x)(find(mean(x(:,1:2),2)>0.75)),probeData,'UniformOutput',false);
-    b = cellfun(@(x)(x(2)),a,'UniformOutput',false);
-    probeThreTrialNum = cellfun(@(x,y)(x(y)),probeTrialNum,b);
-    for i = 1:size(bias,2)
-       bias_befProbe(i) = nanmean(bias(1:probeThreTrialNum,i));  
-
-    end
+    %a = cellfun(@(x)(find(mean(x(:,1:2),2)>0.75)),probeData,'UniformOutput',false);
+    %b = cellfun(@(x)(x(2)),a,'UniformOutput',false);
+    %probeThreTrialNum = cellfun(@(x,y)(x(y)),probeTrialNum,b);
+    %for i = 1:size(bias,2)
+    %   bias_befProbe(i) = nanmean(bias(1:probeThreTrialNum,i));  
+    %
+    %end
 end
 
 %----------------------------SOME TESTING CODE-----------------------------

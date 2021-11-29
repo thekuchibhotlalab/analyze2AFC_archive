@@ -43,9 +43,8 @@ trialData.accuracy = smoothdata(double(trialData.responseType==1),'movmean',lear
 
 [trialData.bias, trialData.acc_L, trialData.acc_R] = fn_getBias(trialData.stimulus,trialData.responseType);
 
-[probeData, ~,~,trialNumNoMiss,probeTrialNumNoMiss,reinfDataBef, reinfDataAft]...
+[probeData, trialNum,probeTrialNum,trialNumNoMiss,probeTrialNumNoMiss,reinfDataBef, reinfDataAft]...
     = cellfun(@fn_getProbe,trialDataKeepMiss.stimulus,trialDataKeepMiss.responseType,trialDataKeepMiss.context,'UniformOutput',false);
-
 
 actL = trialData.action == 1;biasBin = 20;
 actL = smoothdata(actL,'movmean',biasBin);
